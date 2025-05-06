@@ -12,6 +12,7 @@
     }
     h1 {
       text-align: center;
+      font-size: 1.5em;
     }
     table {
       width: 100%;
@@ -22,6 +23,7 @@
       border: 1px solid #000;
       padding: 8px;
       text-align: center;
+      font-size: 0.9em;
     }
     th {
       background-color: #ddd;
@@ -39,12 +41,19 @@
     .pix, .resumo {
       margin-top: 20px;
       font-weight: bold;
+      font-size: 0.95em;
+    }
+    .footer-table {
+      width: 100%;
+      max-width: 500px;
+      margin-top: 20px;
     }
     .footer-table td {
       border: 1px solid #000;
       text-align: right;
       padding: 5px;
       font-weight: bold;
+      font-size: 0.9em;
     }
     .footer-table td:first-child {
       text-align: left;
@@ -54,139 +63,424 @@
       text-align: left;
     }
     .saldo-negativo {
+      background-color: yellow;
       color: red;
       font-weight: bold;
     }
     .saldo-positivo {
-      color: green;
+      background-color: #d4edda;
+      color: #155724;
       font-weight: bold;
+    }
+    .formulario {
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .formulario input, .formulario select, .formulario button {
+      padding: 8px;
+      font-size: 0.9em;
+    }
+
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+      }
+      thead tr {
+        display: none;
+      }
+      tr {
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background: #fff;
+      }
+      td {
+        text-align: left;
+        padding-left: 50%;
+        position: relative;
+      }
+      td::before {
+        position: absolute;
+        top: 8px;
+        left: 10px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+      td:nth-child(1)::before { content: "JOGADORES"; }
+      td:nth-child(2)::before { content: "NOME"; }
+      td:nth-child(3)::before { content: "VALOR"; }
+      td:nth-child(4)::before { content: "STATUS"; }
     }
   </style>
 </head>
 <body>
   <h1>FUTEBOL MENSAL - TERÇA FEIRA 20H - ARENA PETER PAN - <span style="color:red">MAIO 2025</span></h1>
 
-  <table>
+  <div>
+    <button onclick="navegarMes('anterior')">Mês Anterior</button>
+    <button onclick="navegarMes('proximo')">Próximo Mês</button>
+</div>
+
+<div id="modalEdicao" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#fff; padding:20px; border:1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <h3>Editar Jogador</h3>
+    <div>
+        <label for="editarNome">Nome:</label>
+        <input type="text" id="editarNome"><br><br>
+    </div>
+    <div>
+        <label for="editarValor">Valor:</label>
+        <input type="number" step="0.01" id="editarValor"><br><br>
+    </div>
+    <button onclick="salvarEdicao()">Salvar</button>
+    <button onclick="fecharModalEdicao()">Cancelar</button>
+</div>
+
+<div class="formulario">
+    <input type="text" id="nomeNovo" placeholder="Nome do jogador">
+    <select id="tipoNovo">
+        <option value="jogador">Jogador</option>
+        <option value="goleiro">Goleiro</option>
+    </select>
+    <input type="number" step="0.01" id="valorNovo" placeholder="Valor">
+    <button onclick="adicionarPessoa()">Adicionar</button>
+</div>
+
+<table>
     <thead>
-      <tr>
-        <th>JOGADORES</th>
-        <th>NOME</th>
-        <th>VALOR</th>
-        <th>STATUS</th>
-      </tr>
+        <tr>
+            <th>JOGADORES</th>
+            <th>NOME</th>
+            <th>VALOR</th>
+            <th>STATUS</th>
+            <th>AÇÃO</th>
+        </tr>
     </thead>
     <tbody id="tabela-corpo"></tbody>
-  </table>
+</table>
 
-  <table class="footer-table">
+<table class="footer-table">
     <tr>
-      <td>VALOR ARRECADADO:</td>
-      <td id="arrecadado">R$ 0,00</td>
+        <td>VALOR ARRECADADO:</td>
+        <td id="arrecadado">R$ 0,00</td>
     </tr>
     <tr>
-      <td>VALOR QUADRA:</td>
-      <td style="color: red;">R$ -600,00</td>
+        <td>VALOR QUADRA:</td>
+        <td>-R$ 600,00</td>
     </tr>
     <tr>
-      <td>SALDO ATUAL (CAIXA):</td>
-      <td id="saldo">R$ 0,00</td>
+        <td>SALDO ATUAL (CAIXA):</td>
+        <td id="saldo">R$ 0,00</td>
     </tr>
-  </table>
+</table>
 
-  <div style="text-align: center;" class="pix">
+<div class="pix">
     PIX - LUCAS BORBA:<br>
     lucasborba.engenharia@gmail.com
+</div>
+
+  <div id="modalEdicao" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#fff; padding:20px; border:1px solid #ccc; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+      <h3>Editar Jogador</h3>
+      <div>
+          <label for="editarNome">Nome:</label>
+          <input type="text" id="editarNome"><br><br>
+      </div>
+      <div>
+          <label for="editarValor">Valor:</label>
+          <input type="number" step="0.01" id="editarValor"><br><br>
+      </div>
+      <button onclick="salvarEdicao()">Salvar</button>
+      <button onclick="fecharModalEdicao()">Cancelar</button>
   </div>
 
   <script>
-    const jogadoresPadrao = [
-      { pos: 'GOLEIRO 01', nome: 'AILTON', valor: 20, status: 'ABERTO' },
-      { pos: 'GOLEIRO 02', nome: 'ANDRÉ', valor: 20, status: 'ABERTO' },
-      { pos: 'GOLEIRO 03', nome: 'CARLOS EDUARDO', valor: 20, status: 'ABERTO' },
-      { pos: 'GOLEIRO 04', nome: 'EMERSON PEREIRA', valor: 20, status: 'ABERTO' },
-      {},
-      { num: 1, nome: 'LUCAS BORBA', valor: 60, status: 'PAGO' },
-      { num: 2, nome: 'CLAUDINHO', valor: 60, status: 'ABERTO' },
-      { num: 3, nome: 'CÉLIO', valor: 60, status: 'ABERTO' },
-      { num: 4, nome: 'FABIO LUIZ', valor: 60, status: 'ABERTO' },
-      { num: 5, nome: 'BRUNO BARRABARRA', valor: 60, status: 'PAGO' },
-      { num: 6, nome: 'LUAN OLIVEIRA', valor: 60, status: 'PAGO' },
-      { num: 7, nome: 'ANDRÉ SOUZA', valor: 60, status: 'ABERTO' },
-      { num: 8, nome: 'THYAGO', valor: 60, status: 'ABERTO' },
-      { num: 9, nome: 'MARLON MARTINS', valor: 60, status: 'ABERTO' },
-      { num: 10, nome: 'EZEQUIEL FRANÇA', valor: 60, status: 'ABERTO' },
-      { num: 11, nome: 'JULIO', valor: 60, status: 'ABERTO' },
-      { num: 12, nome: 'GILMAR', valor: 60, status: 'ABERTO' },
-      { num: 13, nome: 'KAYO SIMIONATTO', valor: 60, status: 'PAGO' },
-      { num: 14, nome: 'RERISSON', valor: 60, status: 'ABERTO' },
-      { num: 15, nome: 'LUCAS PANORAMA', valor: 60, status: 'ABERTO' },
-      { num: 16, nome: 'ALISSON TEIXEIRA', valor: 60, status: 'ABERTO' },
-      { num: 17, nome: 'RICARDO', valor: 60, status: 'ABERTO' },
-      { num: 18, nome: 'VITOR', valor: 60, status: 'ABERTO' },
-      { num: 19, nome: 'RAFAEL', valor: 60, status: 'ABERTO' },
-      { num: 20, nome: 'MAURO BISCAGLIA', valor: 60, status: 'ABERTO' },
-      { num: 21, nome: 'GABRIEL BECKER', valor: 60, status: 'ABERTO' }
+    const anoAtual = 2025;
+    let mesAtual = 'maio'; // Mantenha o mês atual como referência
+    const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+    // Estrutura para armazenar os dados de cada mês
+    let dadosMensais = JSON.parse(localStorage.getItem('dadosFutebol')) || {};
+
+    const jogadoresPadraoMaio = [
+        { pos: 'GOLEIRO 01', nome: 'AILTON', valor: 20, status: 'ABERTO' },
+        { pos: 'GOLEIRO 02', nome: 'ANDRÉ', valor: 20, status: 'ABERTO' },
+        { pos: 'GOLEIRO 03', nome: 'CARLOS EDUARDO', valor: 20, status: 'ABERTO' },
+        { pos: 'GOLEIRO 04', nome: 'EMERSON PEREIRA', valor: 20, status: 'ABERTO' },
+        {},
+        { num: 1, nome: 'LUCAS BORBA', valor: 60, status: 'PAGO' },
+        { num: 2, nome: 'CLAUDINHO', valor: 60, status: 'ABERTO' },
+        { num: 3, nome: 'CÉLIO', valor: 60, status: 'ABERTO' },
+        { num: 4, nome: 'FABIO LUIZ', valor: 60, status: 'ABERTO' },
+        { num: 5, nome: 'BRUNO BARRABARRA', valor: 60, status: 'PAGO' },
+        { num: 6, nome: 'LUAN OLIVEIRA', valor: 60, status: 'PAGO' },
+        { num: 7, nome: 'ANDRÉ SOUZA', valor: 60, status: 'ABERTO' },
+        { num: 8, nome: 'THYAGO', valor: 60, status: 'ABERTO' },
+        { num: 9, nome: 'MARLON MARTINS', valor: 60, status: 'ABERTO' },
+        { num: 10, nome: 'EZEQUIEL FRANÇA', valor: 60, status: 'ABERTO' },
+        { num: 11, nome: 'JULIO', valor: 60, status: 'ABERTO' },
+        { num: 12, nome: 'GILMAR', valor: 60, status: 'ABERTO' },
+        { num: 13, nome: 'KAYO SIMIONATTO', valor: 60, status: 'PAGO' },
+        { num: 14, nome: 'RERISSON', valor: 60, status: 'ABERTO' },
+        { num: 15, nome: 'LUCAS PANORAMA', valor: 60, status: 'ABERTO' },
+        { num: 16, nome: 'ALISSON TEIXEIRA', valor: 60, status: 'ABERTO' },
+        { num: 17, nome: 'RICARDO', valor: 60, status: 'ABERTO' },
+        { num: 18, nome: 'VITOR', valor: 60, status: 'ABERTO' },
+        { num: 19, nome: 'RAFAEL', valor: 60, status: 'ABERTO' },
+        { num: 20, nome: 'MAURO BISCAGLIA', valor: 60, status: 'ABERTO' },
+        { num: 21, nome: 'GABRIEL BECKER', valor: 60, status: 'ABERTO' }
     ];
-  
-    let jogadores = JSON.parse(localStorage.getItem('jogadoresStatus')) || jogadoresPadrao;
-  
+
+    // Inicialização dos dados mensais SE não existirem
+    if (Object.keys(dadosMensais).length === 0) {
+        meses.forEach(mes => {
+            dadosMensais[`${mes}-${anoAtual}`] = JSON.parse(JSON.stringify(jogadoresPadraoMaio));
+        });
+        localStorage.setItem('dadosFutebol', JSON.stringify(dadosMensais));
+    }
+
+    let jogadores = dadosMensais[`${mesAtual}-${anoAtual}`] || [];
     const corpo = document.getElementById('tabela-corpo');
-  
+    const tituloMes = document.querySelector('h1 span');
+
+    function atualizarTituloMes() {
+        tituloMes.innerText = `${mesAtual.charAt(0).toUpperCase() + mesAtual.slice(1)} ${anoAtual}`;
+    }
+
     function atualizarTabela() {
-      corpo.innerHTML = '';
-      let arrecadado = 0;
-  
-      jogadores.forEach((j, i) => {
-        const row = document.createElement('tr');
-  
-        if (!j.nome) {
-          row.innerHTML = '<td colspan="4" style="background:#eee; height:10px;"></td>';
-          corpo.appendChild(row);
-          return;
-        }
-  
-        const statusClass = j.status === 'PAGO' ? 'status-pago' : 'status-aberto';
-        const statusCell = `<td class="${statusClass}" onclick="alternarStatus(${i})">${j.status}</td>`;
-  
-        if (j.pos) {
-          row.innerHTML = `
-            <td class="goleiro">${j.pos}</td>
-            <td>${j.nome}</td>
-            <td>R$ ${j.valor.toFixed(2).replace('.', ',')}</td>
-            ${statusCell}
-          `;
-        } else {
-          row.innerHTML = `
-            <td>${j.num}</td>
-            <td>${j.nome}</td>
-            <td>R$ ${j.valor.toFixed(2).replace('.', ',')}</td>
-            ${statusCell}
-          `;
-        }
-  
-        corpo.appendChild(row);
-  
-        if (j.status === 'PAGO') arrecadado += j.valor;
-      });
-  
-      document.getElementById('arrecadado').innerText = `R$ ${arrecadado.toFixed(2).replace('.', ',')}`;
-      const saldo = arrecadado - 600;
-      const saldoEl = document.getElementById('saldo');
-      saldoEl.innerText = `R$ ${saldo.toFixed(2).replace('.', ',')}`;
-      saldoEl.className = saldo < 0 ? 'saldo-negativo' : 'saldo-positivo';
+        corpo.innerHTML = '';
+        let arrecadado = 0;
+
+        jogadores.forEach((j, i) => {
+            const row = document.createElement('tr');
+
+            if (!j.nome) {
+                row.innerHTML = '<td colspan="5" style="background:#eee; height:10px;"></td>';
+                corpo.appendChild(row);
+                return;
+            }
+
+            const statusClass = j.status === 'PAGO' ? 'status-pago' : 'status-aberto';
+            const statusCell = `<td class="${statusClass}" onclick="alternarStatus(${i})">${j.status}</td>`;
+            const acaoCell = `<td>
+                <button onclick="editarPessoa(${i})">Editar</button>
+                <button onclick="removerPessoa(${i})">Remover</button>
+            </td>`;
+
+            let numeroPosicao = '';
+            let classePosicao = '';
+            if (j.pos) {
+                numeroPosicao = j.pos;
+                classePosicao = 'goleiro';
+            } else {
+                numeroPosicao = j.num;
+            }
+
+            row.innerHTML = `
+                <td class="${classePosicao}">${numeroPosicao}</td>
+                <td class="nome-jogador">${j.nome}</td>
+                <td class="valor-jogador">R$ ${j.valor.toFixed(2).replace('.', ',')}</td>
+                ${statusCell}
+                ${acaoCell}
+            `;
+
+            corpo.appendChild(row);
+
+            if (j.status === 'PAGO') arrecadado += j.valor;
+        });
+
+        document.getElementById('arrecadado').innerText = `R$ ${arrecadado.toFixed(2).replace('.', ',')}`;
+        const saldo = arrecadado - 600;
+        const saldoEl = document.getElementById('saldo');
+        saldoEl.innerText = `R$ ${saldo.toFixed(2).replace('.', ',')}`;
+        saldoEl.className = saldo < 0 ? 'saldo-negativo' : 'saldo-positivo';
     }
-  
+
     function alternarStatus(index) {
-      jogadores[index].status = jogadores[index].status === 'PAGO' ? 'ABERTO' : 'PAGO';
-      salvarDados();
-      atualizarTabela();
+        jogadores[index].status = jogadores[index].status === 'PAGO' ? 'ABERTO' : 'PAGO';
+        salvarDadosMensais();
+        atualizarTabela();
     }
-  
-    function salvarDados() {
-      localStorage.setItem('jogadoresStatus', JSON.stringify(jogadores));
+
+    function salvarDadosMensais() {
+        dadosMensais[`${mesAtual}-${anoAtual}`] = [...jogadores]; // Salva uma cópia do array
+        localStorage.setItem('dadosFutebol', JSON.stringify(dadosMensais));
     }
-  
+
+    function adicionarPessoa() {
+        const nome = document.getElementById('nomeNovo').value.trim();
+        const tipo = document.getElementById('tipoNovo').value;
+        const valorNovoInput = document.getElementById('valorNovo');
+        const valor = parseFloat(valorNovoInput.value);
+
+        if (!nome) {
+            alert('Informe um nome.');
+            return;
+        }
+
+        if (isNaN(valor)) {
+            alert('Informe um valor válido.');
+            valorNovoInput.value = '';
+            return;
+        }
+
+        let novoJogador;
+        if (tipo === 'goleiro') {
+            const goleirosAtuais = jogadores.filter(j => j.pos && j.pos.startsWith('GOLEIRO')).length;
+            novoJogador = { pos: `GOLEIRO 0${goleirosAtuais + 1}`, nome, valor, status: 'ABERTO' };
+            // Encontra o índice após o último goleiro (ou após a linha vazia)
+            let indexInsercao = jogadores.findIndex(j => !j.nome);
+            if (indexInsercao === -1) {
+                const primeiroJogador = jogadores.findIndex(j => j.num);
+                indexInsercao = primeiroJogador !== -1 ? primeiroJogador : jogadores.length;
+            }
+            jogadores.splice(indexInsercao, 0, novoJogador);
+        } else {
+            const ultimoNum = Math.max(0, ...jogadores.map(j => j.num || 0));
+            novoJogador = { num: ultimoNum + 1, nome, valor, status: 'ABERTO' };
+            jogadores.push(novoJogador);
+        }
+
+        salvarDadosMensais();
+        atualizarTabela();
+        document.getElementById('nomeNovo').value = '';
+        valorNovoInput.value = '';
+
+        // Carregar para o próximo mês (se existir)
+        const proximoMesAno = obterProximoMesAno(mesAtual, anoAtual);
+        if (dadosMensais[proximoMesAno]) {
+            // Lógica para adicionar no lugar correto no próximo mês também (pode ser mais complexo)
+            dadosMensais[proximoMesAno].push({ ...novoJogador });
+            salvarDadosMensais();
+        } else {
+            dadosMensais[proximoMesAno] = [{ ...novoJogador }];
+            salvarDadosMensais();
+        }
+    }
+
+    let indiceEdicao = -1;
+
+    function editarPessoa(index) {
+        indiceEdicao = index;
+        const jogador = jogadores[index];
+
+        document.getElementById('editarNome').value = jogador.nome;
+        document.getElementById('editarValor').value = jogador.valor;
+        document.getElementById('modalEdicao').style.display = 'block';
+    }
+
+    function salvarEdicao() {
+        if (indiceEdicao === -1) return;
+
+        const nomeEditado = document.getElementById('editarNome').value.trim();
+        const valorEditadoInput = document.getElementById('editarValor');
+        const valorEditado = parseFloat(valorEditadoInput.value);
+
+        if (!nomeEditado) {
+            alert('Informe um nome.');
+            return;
+        }
+
+        if (isNaN(valorEditado)) {
+            alert('Informe um valor válido.');
+            valorEditadoInput.value = '';
+            return;
+        }
+
+        const jogadorOriginal = jogadores[indiceEdicao];
+        const jogadorEditado = { ...jogadorOriginal, nome: nomeEditado, valor: valorEditado };
+        jogadores[indiceEdicao] = jogadorEditado;
+        salvarDadosMensais();
+        atualizarTabela();
+        fecharModalEdicao();
+        indiceEdicao = -1;
+
+        // Carregar para o próximo mês (se existir)
+        const proximoMesAno = obterProximoMesAno(mesAtual, anoAtual);
+        if (dadosMensais[proximoMesAno]) {
+            const indiceProximoMes = dadosMensais[proximoMesAno].findIndex(j =>
+                (j.num && jogadorOriginal.num && j.num === jogadorOriginal.num) ||
+                (j.pos && jogadorOriginal.pos && j.pos === jogadorOriginal.pos)
+            );
+            if (indiceProximoMes !== -1) {
+                dadosMensais[proximoMesAno][indiceProximoMes] = { ...dadosMensais[proximoMesAno][indiceProximoMes], nome: nomeEditado, valor: valorEditado };
+                salvarDadosMensais();
+            }
+        }
+    }
+
+    function fecharModalEdicao() {
+        document.getElementById('modalEdicao').style.display = 'none';
+    }
+
+    function removerPessoa(index) {
+        if (confirm('Deseja remover este jogador?')) {
+            const jogadorRemovido = jogadores.splice(index, 1)[0];
+            salvarDadosMensais();
+            atualizarTabela();
+
+            // Remover do próximo mês (se existir)
+            const proximoMesAno = obterProximoMesAno(mesAtual, anoAtual);
+            if (dadosMensais[proximoMesAno]) {
+                dadosMensais[proximoMesAno] = dadosMensais[proximoMesAno].filter(j =>
+                    (jogadorRemovido.num && j.num !== jogadorRemovido.num) ||
+                    (jogadorRemovido.pos && j.pos !== jogadorRemovido.pos)
+                );
+                salvarDadosMensais();
+            }
+        }
+    }
+
+    function obterProximoMesAno(mes, ano) {
+        const indiceMesAtual = meses.indexOf(mes);
+        if (indiceMesAtual === 11) {
+            return `${meses[0]}-${ano + 1}`;
+        } else {
+            return `${meses[indiceMesAtual + 1]}-${ano}`;
+        }
+    }
+
+    function navegarMes(direcao) {
+    let indiceMesAtual = meses.indexOf(mesAtual);
+
+    if (direcao === 'anterior') {
+        indiceMesAtual--;
+        if (indiceMesAtual < 0) {
+            indiceMesAtual = 11;
+            anoAtual--;
+        }
+    } else if (direcao === 'proximo') {
+        indiceMesAtual++;
+        if (indiceMesAtual > 11) {
+            indiceMesAtual = 0;
+            anoAtual++;
+        }
+    }
+
+    mesAtual = meses[indiceMesAtual];
+    jogadores = dadosMensais[`${mesAtual}-${anoAtual}`] || [];
+
+    // Garante que os goleiros fiquem no início da lista
+    jogadores.sort((a, b) => {
+        if (a.pos && !b.pos) {
+            return -1;
+        }
+        if (!a.pos && b.pos) {
+            return 1;
+        }
+        // Mantém a ordem original dos goleiros e jogadores
+        return 0;
+    });
+
+    atualizarTituloMes();
     atualizarTabela();
-  </script>  
+}
+
+    atualizarTituloMes();
+    atualizarTabela();
+</script>
 </body>
 </html>
