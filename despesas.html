@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Futebol Mensal - Fluxo de Caixa</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        h1 { text-align: center; color: navy; margin-bottom: 20px; }
+        .container { display: flex; flex-direction: column; align-items: center; }
+        .controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        .input-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; }
+        .input-group label { flex-basis: 100%; font-weight: bold; color: #333; }
+        .input-group input[type="text"],
+        .input-group input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 3px; }
+        .input-group button { padding: 10px 15px; border: none; border-radius: 3px; background-color: #007bff; color: white; cursor: pointer; }
+        .input-group button:hover { opacity: 0.9; }
+        table { width: 80%; border-collapse: collapse; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 5px; overflow: hidden; background-color: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        thead { background-color: #f0f0f0; }
+        th[colspan] { text-align: center; }
+        .acao-buttons button { padding: 8px 12px; margin-right: 5px; border: none; border-radius: 3px; cursor: pointer; }
+        .acao-buttons .editar { background-color: #5cb85c; color: white; }
+        .acao-buttons .excluir { background-color: #d9534f; color: white; }
+        .acao-buttons button:hover { opacity: 0.9; }
+        .saldo-inicial { font-weight: bold; color: green; }
+        .receita { color: blue; }
+        .despesa { color: red; }
+        .lucro { font-weight: bold; color: navy; font-size: 1.1em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fluxo de Caixa Mensal - Futebol</h1>
+
+        <div class="controls">
+            <button onclick="navegarMes('anterior')">Mês Anterior</button>
+            <button onclick="navegarMes('proximo')">Próximo Mês</button>
+        </div>
+
+        <h2>Fluxo de Caixa de <span id="mes-atual"></span></h2>
+
+        <div class="input-group">
+            <label for="outraReceitaDesc">Outra Receita</label>
+            <input type="text" id="outraReceitaDesc" placeholder="Descrição da receita extra">
+            <label for="outraReceitaValor">Valor</label>
+            <input type="number" step="0.01" id="outraReceitaValor" placeholder="Valor da receita extra">
+            <button onclick="adicionarOutraReceita()">Adicionar Receita</button>
+        </div>
+
+        <div class="input-group">
+            <label for="tipoDespesa">Tipo de Despesa</label>
+            <select id="tipoDespesa">
+                <option value="fixa">Fixa</option>
+                <option value="variavel">Variável</option>
+            </select>
+            <label for="descricaoDespesa">Descrição da Despesa</label>
+            <input type="text" id="descricaoDespesa" placeholder="Descrição da despesa">
+            <label for="valorDespesa">Valor da Despesa</label>
+            <input type="number" step="0.01" id="valorDespesa" placeholder="Valor da despesa">
+            <button onclick="adicionarDespesa()">Adicionar Despesa</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-fluxo-caixa"></tbody>
+            <tfoot>
+                <tr><td colspan="2" class="saldo-inicial">Saldo Inicial</td><td id="saldo-inicial">R$ 0,00</td><td></td></tr>
+                <tr><td colspan="2" class="receita">Receitas Recorrentes</td><td id="receitas-recorrentes">R$ 0,00</td><td></td></tr>
+                <tr><td colspan="2" class="receita">Outras Receitas</td><td id="outras-receitas">R$ 0,00</td><td></td></tr>
+                <tr><td colspan="2" class="despesa">Total Despesas</td><td id="total-despesas">R$ 0,00</td><td></td></tr>
+                <tr><td colspan="2" class="lucro">Lucro (Caixa)</td><td id="lucro-caixa">R$ 0,00</td><td></td></tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <script>
+        const anoAtual = 2025;
+        let mesAtual = 'maio';
+        const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+        let fluxoCaixaMensal = JSON.parse(localStorage.getItem('fluxoCaixaFutebol')) || {};
+
+        const despesasFixasPadrao = [
+            { descricao: 'Aluguel da Quadra', valor: 600 }
+        ];
+
+        function inicializarMes(mes, ano) {
+            const chaveMes = `<span class="math-inline">\{mes\}\-</span>{ano}`;
+            if (!fluxoCaixaMensal[chaveMes]) {
+                const saldoAnterior = obterSaldoFinalMesAnterior(mes, ano);
+                fluxoCaixaMensal[chaveMes] = {
+                    saldoInicial: saldoAnterior,
+                    receitasRecorrentes: 0, // Será preenchido pela planilha de controle
+                    outrasReceitas: [],
+                    despesasFixas: [...despesasFixasPadrao],
+                    despesasVariaveis: []
+                };
+                salvarFluxoCaixa();
+            }
+        }
+
+        function obterSaldoFinalMesAnterior(mes, ano) {
+            const indiceMesAtual = meses.indexOf(mes);
+            let mesAnterior, anoAnterior;
+
+            if (indiceMesAtual === 0) {
+                mesAnterior = meses[11];
+                anoAnterior = ano - 1;
+            } else {
+                mesAnterior = meses[indiceMesAtual - 1];
+                anoAnterior = ano;
+            }
+
+            const chaveMesAnterior = `<span class="math-inline">\{mesAnterior\}\-</span>{anoAnterior}`;
+            return fluxoCaixaMensal[chaveMesAnterior]?.lucroCaixa || 0;
+        }
+
+        inicializarMes(mesAtual, anoAtual);
+
+        const mesAtualElement = document.getElementById('mes-atual');
+        const tabelaFluxoCaixaCorpo = document.getElementById('tabela-fluxo-caixa');
+        const saldoInicialElement = document.getElementById('saldo-inicial');
+        const receitasRecorrentesElement = document.getElementById('receitas-recorrentes');
+        const outrasReceitasElement = document.getElementById('outras-receitas');
+        const totalDespesasElement = document.getElementById('total-despesas');
+        const lucroCaixaElement = document.getElementById('lucro-caixa');
+
+        function atualizarTituloMes() {
+            mesAtualElement.innerText = `${mesAtual.charAt(0).toUpperCase() + mesAtual.slice(1)} ${anoAtual}`;
+        }
+
+        function salvarFluxoCaixa() {
+            localStorage.setItem('fluxoCaixaFutebol', JSON.stringify(fluxoCaixaMensal));
+        }
+
+        function renderizarFluxoCaixa() {
+            tabelaFluxoCaixaCorpo.innerHTML = '';
+            const fluxoMes = fluxoCaixaMensal[`<span class="math-inline">\{mesAtual\}\-</span>{anoAtual}`];
+            if (!fluxoMes) return;
+
+            let totalDespesas = 0;
+            let totalOutrasReceitas = 0;
+
+            // Saldo Inicial
+            const saldoInicialRow = document.createElement('tr');
+            saldoInicialRow.innerHTML = `<td colspan="2" class="saldo-inicial">Saldo Inicial</td><td class="saldo-inicial">R$ ${fluxoMes.saldoInicial.toFixed(2).replace('.', ',')}</td><td></td>`;
+            tabelaFluxoCaixaCorpo.appendChild(saldoInicialRow);
+
+            // Receitas Recorrentes
+            const receitasRecorrentesRow = document.createElement('tr');
+            receitasRecorrentesRow.innerHTML = `<td colspan="2" class="receita">Receitas Recorrentes</td><td class="receita"><input type="number" id="input-receitas-recorrentes" value="${fluxoMes.receitasRecorrentes.toFixed(2)}" onchange="atualizarReceitasRecorrentes(this.value)"></td><td></td>`;
+            tabelaFluxoCaixaCorpo.appendChild(receitasRecorrentesRow);
+
+            // Outras Receitas
+            fluxoMes.outrasReceitas.forEach((receita, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="receita">Extra</td>
+                    <td class="receita"><span class="math-inline">\{receita\.descricao\}</td\>
+<td class\="receita"\>R</span> <span class="math-inline">\{receita\.valor\.toFixed\(2\)\.replace\('\.', ','\)\}</td\>
+<td class\="acao\-buttons"\>
+<button class\="editar" onclick\="editarOutraReceita\(</span>{index})">Editar</button>
+                        <button class="excluir" onclick="excluirOutraReceita(${index})">Excluir</button>
+                    </td>
+                `;
+                tabelaFluxoCaixaCorpo.appendChild(row);
+                totalOutrasReceitas += receita.valor;
+            });
+
+            // Despesas Fixas
+            fluxoMes.despesasFixas.forEach((despesa, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="despesa">Fixa</td>
+                    <td class="despesa"><span class="math-inline">\{despesa\.descricao\}</td\>
+<td class\="despesa"\>R</span> ${despesa.valor.toFixed(2).replace('.', ',')}</td>
+                    <td class="acao-buttons">
+                        <button class="editar" onclick="editarDespesa('despesasFixas', ${index})">Editar</button>
+                        <button class="excluir" onclick="excluirDespesa('despesasFixas', ${index})">Excluir</button>
+                    </td>
+                `;
+                tabelaFluxoCaixaCorpo.appendChild(row);
+                totalDespesas += despesa.valor;
+            });
+
+            // Despesas Variáveis
+            fluxoMes.despesasVariaveis.forEach((despesa, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="despesa">Variável</td>
+                    <td class="despesa"><span class="math-inline">\{despesa\.descricao\}</td\>
+<td class\="despesa"\>R</span> ${despesa.valor.toFixed(2).replace('.', ',')}</td>
+                    <td class="acao-buttons">
+                        <button class="editar" onclick="editarDespesa('despesasVariaveis', ${index})">Editar</button>
+                        <button class="excluir" onclick="excluirDespesa('despesasVariaveis', ${index})">Excluir</button>
+                    </td>
+                `;
+                tabelaFluxoCaixaCorpo.appendChild(row);
+                totalDespesas += despesa.valor;
+            });
+
+            saldoInicialElement.innerText = `R$ ${fluxoMes.saldoInicial.toFixed(2).replace('.', ',')}`;
+            receitasRecorrentesElement.innerText = `R$ ${fluxoMes.receitasRecorrentes.toFixed(2).replace('.', ',')}`;
+            outrasReceitasElement.innerText = `R$ ${totalOutrasReceitas.toFixed(2).replace('.', ',')}`;
+            totalDespesasElement.innerText = `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`;
+            const lucro = fluxoMes.saldoInicial + fluxoMes.receitasRecorrentes + totalOutrasReceitas - totalDespesas;
+            fluxoMes.lucroCaixa = lucro;
+            lucroCaixaElement.innerText = `R$ ${lucro.toFixed(2).replace('.', ',')}`;
+            salvarFluxoCaixa();
+        }
+
+        function atualizarReceitasRecorrentes(valor) {
+            const valorNumerico = parseFloat(valor);
+            if (!isNaN(valorNumerico)) {
+                fluxoCaixaMensal[`<span class="math-inline">\{mesAtual\}\-</span>{anoAtual}`].receitasRecorrentes = valorNumerico;
+                salvarFluxoCaixa();
+                renderizarFluxoCaixa();
+            } else {
+                alert('Por favor, insira um valor numérico para as receitas recorrentes.');
+                renderizarFluxoCaixa(); // Para reverter para o valor anterior em caso de erro
+            }
+        }
+
+        function adicionarOutraReceita() {
+            const descricao = document.getElementById('outraReceitaDesc').value.trim();
+            const valor = parseFloat(document.getElementById('outraReceitaValor').value);
+
+            if (descricao && !isNaN(valor)) {
+                fluxoCaixaMensal[`<span class="math-inline">\{mesAtual\}\-</span>{anoAtual}`].outrasReceitas.push({ descricao, valor });
+                salvarFluxoCaixa();
+                renderizarFluxoCaixa();
+                document.getElementById('outraReceitaDesc').value = '';
+                document.getElementById('outraReceitaValor').value = '';
+            } else {
+                alert('Por favor, preencha a descrição e o valor da receita.');
+            }
+        }
+
+        function adicionarDespesa() {
+            const tipo = document.getElementById('tipoDespesa').value;
+            const descricao = document.getElementById('descricaoDespesa').value.trim();
+            const valor = parseFloat(document.getElementById('valorDespesa').value);
+
+            if (descricao && !isNaN(valor)) {
+                fluxoCaixaMensal[`<span class="math-inline">\{mesAtual\}\-</span>{anoAtual}`][tipo === 'fixa' ? 'despesasFixas' : 'despesasVariaveis'].push({ descricao, valor });
+                salvarFluxoCaixa();
+                renderizarFluxoCaixa();
+                document.getElementById('descricaoDespesa').value = '';
+                document.getElementById('valorDespesa').value = '';
+            } else {
+                alert('Por favor, preencha a descrição e o valor da despesa.');
+            }
+        }
+
+        function editarDespesa(tipo, index) {
+            const listaDespesas = fluxoCaixaMensal[`<span class="math-inline">\{mesAtual\}\-</span>{anoAtual}`][tipo];
+            const despesaEditar = listaDespesas[index];
+            const novaDescricao = prompt(`Editar descrição de ${tipo}:`, despesaEditar.descricao);
+            if (novaDescricao !== null) {
+                const novoValorStr = prompt(`Editar valor de ${tipo}:`, despesaEditar.valor);
+                if (novoValorStr !== null) {
+                    const novoValor = parseFloat(novoValorStr);
+                    if (!isNaN(novoValor)) {
+                        listaDespesas[index].descricao = novaDescricao.trim();
+                        listaDespesas[index].valor = novoValor;
+                        salvarFluxoCaixa();
+                        renderizarFluxoCaixa();
+                    } else {
+                        alert('Valor inválido.');
+                    }
+                }
+            }
+        }
+
+        function excluirDespesa(tipo, index) {
+            if (confirm(`Deseja excluir esta despesa ${tipo}?`)) {
+                fluxoCaixaMensal[`<span class="math-inline">\{mesAtual\}\-</span>{anoAtual}`][tipo].splice(index, 1);
+                salvarFluxoCaixa();
+                renderizarFluxoCaixa();
+            }
+        }
+
+        function editarOutraReceita(index) {
+            const receitaEditar = fluxoCaixaMensal[`<span class="math-inline">\{mesAtual\}\-</span>{anoAtual}`].outrasReceitas[index];
+            const novaDescricao = prompt(`Editar descrição da receita:`, receitaEditar.descricao);
+            if (novaDescricao !== null) {
+                const novoValorStr = prompt(`Editar valor da receita:`, receitaEditar.valor);
+                if (novoValorStr !== null) {
+                    const novoValor = parseFloat(novoValorStr);
+                    if (!isNaN(novoValor)) {
+                        fluxoCaixaMensal[`${mesAtual}-${anoAtual}`].outrasReceitas[index].descricao = novaDescricao.trim();
+                        fluxoCaixaMensal[`${mesAtual}-${anoAtual}`].outrasReceitas[index].valor = novoValor;
+                        salvarFluxoCaixa();
+                        renderizarFluxoCaixa();
+                    } else {
+                        alert('Valor inválido.');
+                    }
+                }
+            }
+        }
+
+        function excluirOutraReceita(index) {
+            if (confirm(`Deseja excluir esta receita extra?`)) {
+                fluxoCaixaMensal[`${mesAtual}-${anoAtual}`].outrasReceitas.splice(index, 1);
+                salvarFluxoCaixa();
+                renderizarFluxoCaixa();
+            }
+        }
+
+        function navegarMes(direcao) {
+            let indiceMesAtual = meses.indexOf(mesAtual);
+
+            if (direcao === 'anterior') {
+                indiceMesAtual--;
+                if (indiceMesAtual < 0) {
+                    indiceMesAtual = 11;
+                    anoAtual--;
+                }
+            } else if (direcao === 'proximo') {
+                indiceMesAtual++;
+                if (indiceMesAtual > 11) {
+                    indiceMesAtual = 0;
+                    anoAtual++;
+                }
+            }
+
+            mesAtual = meses[indiceMesAtual];
+            inicializarMes(mesAtual, anoAtual);
+            atualizarTituloMes();
+            renderizarFluxoCaixa();
+        }
+
+        atualizarTituloMes();
+        renderizarFluxoCaixa();
+    </script>
+</body>
+</html>
